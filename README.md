@@ -43,25 +43,31 @@ book.addOrder(SELL, 99.0, 8, 3);    // Matches with order 1
 
 ---
 
-## **EXERCISE 2: LRU Cache**
+## **EXERCISE 2: Generic LRU Cache**
 
 ### **Objective**
-Implement an LRU (Least Recently Used) cache with O(1) access.
+Implement a generic LRU (Least Recently Used) cache with O(1) access that works with any key-value types.
 
 ### **Specifications**
 ```cpp
+template<typename Key, typename Value>
 class LRUCache {
 public:
-    LRUCache(int capacity);
+    explicit LRUCache(size_t capacity);
     
-    // Get a value, returns -1 if not found
-    int get(int key);
+    // Get a value, returns std::nullopt if not found
+    std::optional<Value> get(const Key& key);
     
     // Insert/update a value
-    void put(int key, int value);
+    void put(const Key& key, const Value& value);
+    
+    // Additional utility methods
+    bool contains(const Key& key) const;
+    size_t size() const;
+    void clear();
     
 private:
-    int capacity_;
+    size_t capacity_;
     // Your implementation here
 };
 ```
@@ -69,16 +75,17 @@ private:
 ### **Constraints**
 - `get()` and `put()` in **O(1)**
 - When capacity is exceeded, remove the least recently used element
-- Use `unordered_map` + doubly linked list
+- Use `std::unordered_map` + doubly linked list
+- Support any hashable key type and any value type
 
 ### **Usage Example**
 ```cpp
-LRUCache cache(2);
-cache.put(1, 1);
-cache.put(2, 2);
-cache.get(1);       // returns 1
-cache.put(3, 3);    // evicts key 2
-cache.get(2);       // returns -1 (not found)
+LRUCache<int, std::string> cache(2);
+cache.put(1, "Alice");
+cache.put(2, "Bob");
+auto result = cache.get(1);     // returns std::optional{"Alice"}
+cache.put(3, "Charlie");        // evicts key 2
+auto missing = cache.get(2);    // returns std::nullopt
 ```
 
 ---

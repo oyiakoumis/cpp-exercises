@@ -1,0 +1,10 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never            # Never use tabs, always spaces
+ColumnLimit: 100         # Wider line length (default LLVM is 80)
+SpaceAfterCStyleCast: true
+AllowShortIfStatementsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Empty
+SortIncludes: CaseSensitive
+ReflowComments: true
