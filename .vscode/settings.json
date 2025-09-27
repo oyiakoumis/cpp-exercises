@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        ".fantomasignore": "ignore",
+        "vwapcalculator": "cpp",
+        "deque": "cpp"
+    }
+}
