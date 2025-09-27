@@ -2,6 +2,7 @@
     "files.associations": {
         ".fantomasignore": "ignore",
         "vwapcalculator": "cpp",
-        "deque": "cpp"
+        "deque": "cpp",
+        "string": "cpp"
     }
 }
