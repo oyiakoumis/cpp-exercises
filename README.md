@@ -524,3 +524,247 @@ auto momentum_strategy = [](const Tick& tick, double current_price) -> int {
     return 0;
 };
 ```
+
+---
+
+# **EXERCICE 12: Market Data Feed Simulator**
+
+## **Objective**
+Implement an asynchronous market data feed simulator with backpressure handling and performance monitoring.
+
+## **Specifications**
+```cpp
+class MarketDataFeed {
+public:
+    using TickCallback = std::function<void(const Tick&)>;
+    using ErrorCallback = std::function<void(const std::string&)>;
+    
+    MarketDataFeed();
+    ~MarketDataFeed();
+    
+    // Start/stop the feed
+    void start();
+    void stop();
+    
+    // Subscribe to symbols
+    void subscribe(const std::string& symbol, TickCallback onTick, ErrorCallback onError);
+    void unsubscribe(const std::string& symbol);
+    
+    // Control tick frequency
+    void setTickRate(const std::string& symbol, int ticksPerSecond);
+    
+    // Performance statistics
+    uint64_t getTicksReceived(const std::string& symbol) const;
+    uint64_t getTicksDropped(const std::string& symbol) const;
+    double getAverageLatency() const;
+    
+private:
+    struct SymbolData {
+        double lastPrice = 100.0;
+        std::atomic<uint64_t> ticksReceived{0};
+        std::atomic<uint64_t> ticksDropped{0};
+        int tickRate = 1000; // ticks per second
+        TickCallback callback;
+        ErrorCallback errorCallback;
+    };
+    
+    std::unordered_map<std::string, SymbolData> symbols_;
+    std::atomic<bool> running_{false};
+    std::vector<std::thread> workers_;
+    mutable std::shared_mutex symbolsMutex_;
+    
+    // Simulate realistic price movements
+    double generateNextPrice(const std::string& symbol, double currentPrice);
+    void feedWorker(const std::string& symbol);
+};
+```
+
+## **Constraints**
+- Use **std::async** or custom thread pool for simulation
+- Handle **backpressure**: drop ticks if consumer is too slow
+- Implement **realistic price simulation** (Brownian motion + volatility)
+- **Thread-safe** subscribe/unsubscribe operations
+- **Clean shutdown** of all threads
+- Use **C++17/20 features**: std::shared_mutex, std::atomic, etc.
+
+## **Usage Example**
+```cpp
+MarketDataFeed feed;
+std::atomic<int> receivedCount{0};
+
+// Subscribe with lambda callback
+feed.subscribe("AAPL", [&](const Tick& tick) {
+    receivedCount++;
+    // Process tick (simulate slow consumer occasionally)
+    if (receivedCount % 1000 == 0) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+}, [](const std::string& error) {
+    std::cerr << "Error: " << error << std::endl;
+});
+
+feed.setTickRate("AAPL", 10000); // 10k ticks/sec
+feed.start();
+
+// Monitor performance
+std::this_thread::sleep_for(std::chrono::seconds(5));
+std::cout << "Received: " << feed.getTicksReceived("AAPL") << std::endl;
+std::cout << "Dropped: " << feed.getTicksDropped("AAPL") << std::endl;
+std::cout << "Avg Latency: " << feed.getAverageLatency() << "ms" << std::endl;
+
+feed.stop();
+```
+
+---
+
+# **EXERCICE 13: Async Order Router**
+
+## **Objective**
+Implement an asynchronous order router with retry logic, timeout handling, and comprehensive monitoring.
+
+## **Specifications**
+```cpp
+enum class OrderStatus { PENDING, FILLED, REJECTED, CANCELLED, PARTIAL };
+
+struct OrderResult {
+    int orderId;
+    OrderStatus status;
+    double filledPrice;
+    int filledQuantity;
+    std::string message;
+    std::chrono::milliseconds latency;
+    std::string exchangeName;
+};
+
+class AsyncOrderRouter {
+public:
+    using OrderCallback = std::function<void(const OrderResult&)>;
+    
+    AsyncOrderRouter();
+    ~AsyncOrderRouter();
+    
+    // Send order asynchronously
+    std::future<OrderResult> sendOrderAsync(
+        const std::string& symbol,
+        Side side,
+        double price,
+        int quantity,
+        OrderCallback callback = nullptr
+    );
+    
+    // Cancel order
+    std::future<bool> cancelOrderAsync(int orderId);
+    
+    // Configuration
+    void setMaxRetries(int retries);
+    void setTimeoutMs(int timeoutMs);
+    void addExchange(const std::string& exchangeName, int avgLatencyMs, double successRate);
+    
+    // Monitoring and statistics
+    double getAverageLatency() const;
+    double getSuccessRate() const;
+    uint64_t getTotalOrders() const;
+    
+    // Health check
+    bool isExchangeHealthy(const std::string& exchangeName) const;
+    
+private:
+    struct ExchangeConfig {
+        std::string name;
+        int avgLatencyMs;
+        double successRate;
+        std::atomic<uint64_t> totalOrders{0};
+        std::atomic<uint64_t> successfulOrders{0};
+        std::atomic<uint64_t> totalLatencyMs{0};
+    };
+    
+    struct PendingOrder {
+        int orderId;
+        std::string symbol;
+        Side side;
+        double price;
+        int quantity;
+        std::promise<OrderResult> promise;
+        OrderCallback callback;
+        std::chrono::steady_clock::time_point startTime;
+        int attemptCount = 0;
+    };
+    
+    std::unordered_map<std::string, ExchangeConfig> exchanges_;
+    std::unordered_map<int, std::unique_ptr<PendingOrder>> pendingOrders_;
+    
+    std::atomic<int> nextOrderId_{1};
+    std::atomic<int> maxRetries_{3};
+    std::atomic<int> timeoutMs_{1000};
+    
+    mutable std::shared_mutex exchangesMutex_;
+    mutable std::mutex pendingOrdersMutex_;
+    
+    // Thread pool for order processing
+    std::vector<std::thread> workers_;
+    ThreadSafeQueue<std::function<void()>> taskQueue_;
+    std::atomic<bool> running_{false};
+    
+    // Core functionality
+    std::future<OrderResult> sendToExchange(
+        const std::string& exchangeName, 
+        const PendingOrder& order
+    );
+    
+    void retryOrder(std::shared_ptr<PendingOrder> order);
+    void workerThread();
+    std::string selectBestExchange(const std::string& symbol) const;
+    
+    // Simulation helpers
+    OrderResult simulateExchangeResponse(
+        const ExchangeConfig& exchange, 
+        const PendingOrder& order
+    ) const;
+};
+```
+
+## **Constraints**
+- Use **std::future** and **std::promise** for async operations
+- Implement **automatic retry** with exponential backoff on failure
+- **Configurable timeout** per order
+- **Simulate network latency** and variable success rates
+- **Thread-safe** operations with minimal locking
+- Implement **circuit breaker pattern** (bonus)
+- Use **C++17/20 features**: std::optional, structured bindings, etc.
+
+## **Usage Example**
+```cpp
+AsyncOrderRouter router;
+
+// Configure exchanges with different characteristics
+router.addExchange("NYSE", 50, 0.98);    // 50ms avg latency, 98% success
+router.addExchange("NASDAQ", 30, 0.95);  // 30ms avg latency, 95% success
+router.addExchange("BATS", 20, 0.99);    // 20ms avg latency, 99% success
+
+router.setMaxRetries(3);
+router.setTimeoutMs(500);
+
+// Send order with callback
+auto future = router.sendOrderAsync("AAPL", BUY, 150.0, 100, 
+    [](const OrderResult& result) {
+        if (result.status == OrderStatus::FILLED) {
+            std::cout << "Order " << result.orderId << " filled at " 
+                      << result.filledPrice << std::endl;
+        }
+    });
+
+// Wait for result or continue processing
+try {
+    auto result = future.get();
+    std::cout << "Final status: " << static_cast<int>(result.status) << std::endl;
+    std::cout << "Latency: " << result.latency.count() << "ms" << std::endl;
+} catch (const std::exception& e) {
+    std::cerr << "Order failed: " << e.what() << std::endl;
+}
+
+// Monitor performance
+std::cout << "Success Rate: " << router.getSuccessRate() * 100 << "%" << std::endl;
+std::cout << "Average Latency: " << router.getAverageLatency() << "ms" << std::endl;
+```
+
+---

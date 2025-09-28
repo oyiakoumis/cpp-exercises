@@ -3,6 +3,9 @@
         ".fantomasignore": "ignore",
         "vwapcalculator": "cpp",
         "deque": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "thread": "cpp",
+        "queue": "cpp",
+        "stdexcept": "cpp"
     }
 }
