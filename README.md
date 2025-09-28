@@ -527,7 +527,7 @@ auto momentum_strategy = [](const Tick& tick, double current_price) -> int {
 
 ---
 
-# **EXERCICE 12: Market Data Feed Simulator**
+# **EXERCISE 12: Market Data Feed Simulator**
 
 ## **Objective**
 Implement an asynchronous market data feed simulator with backpressure handling and performance monitoring.
@@ -617,7 +617,7 @@ feed.stop();
 
 ---
 
-# **EXERCICE 13: Async Order Router**
+# **EXERCISE 13: Async Order Router**
 
 ## **Objective**
 Implement an asynchronous order router with retry logic, timeout handling, and comprehensive monitoring.

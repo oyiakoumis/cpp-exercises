@@ -6,6 +6,8 @@
         "string": "cpp",
         "thread": "cpp",
         "queue": "cpp",
-        "stdexcept": "cpp"
+        "stdexcept": "cpp",
+        "shared_mutex": "cpp",
+        "unordered_map": "cpp"
     }
 }
