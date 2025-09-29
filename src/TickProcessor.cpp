@@ -89,8 +89,8 @@ class TickProcessor {
     }
 
     void stop() {
-        if (running_.load()) {
-            running_.store(false);
+        bool expected = true;
+        if (running_.compare_exchange_strong(expected, false)) {
             if (processorThread_.joinable()) {
                 processorThread_.join();
             }

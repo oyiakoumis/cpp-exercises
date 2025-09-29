@@ -405,16 +405,16 @@ public:
 ### **Constraints**
 - Gradient descent algorithm from scratch
 - Handle multiple features (X can have multiple columns)
-- Stopping criteria: convergence or max iterations
-- Optional feature normalization
+- Fixed number of iterations (no convergence checking)
+- No external libraries
 
 ### **Usage Example**
 ```cpp
-// Data: price = a*volume + b*volatility + c
-std::vector<std::vector<double>> X = {{100, 0.1}, {200, 0.2}, {150, 0.15}};
-std::vector<double> y = {50.0, 55.0, 52.0};
+// Data: price = a*size + b*bedrooms + c
+std::vector<std::vector<double>> X = {{1000, 2}, {1500, 3}, {2000, 4}};
+std::vector<double> y = {150000, 200000, 250000};
 
-LinearRegression lr;
+LinearRegression lr(0.0001, 1000);
 lr.fit(X, y);
 auto predictions = lr.predict(X);
 ```
